@@ -1,0 +1,39 @@
+version: '3.8'
+
+x-environment-defaults: &environment-defaults
+  DEBUG: "True"
+  DB_NAME: "onetime_secret"
+  DB_USER: "postgres"
+  DB_PASSWORD: "izelah69"
+  DB_HOST: "postgres-db"
+  DB_PORT: 5432
+  SECRET_KEY: "django-insecure-__uo0yu^z8s*snm2d-#!^+sivlqe9g@01$$3*_u!*xr&7%%nv+l"
+  AES_KEY: "my_secret_key_16"
+
+services:
+  app:
+    build: .
+    command: sh -c "python manage.py migrate && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres-db
+    environment:
+      <<: *environment-defaults
+
+  postgres-db:
+    image: postgres:latest
+    restart: always
+    container_name: postgres-db
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -d postgres -U postgres' ]
+      interval: 10s
+      timeout: 5s
+      retries: 5

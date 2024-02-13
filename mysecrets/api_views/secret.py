@@ -1,4 +1,4 @@
-from ..serializers import SecretSerializer, PassphraseSerializer
+from ..serializers import SecretSerializer
 from ..models import Secret
 from ..utils import decrypt
 from django.shortcuts import get_object_or_404
@@ -6,23 +6,38 @@ from django.utils.crypto import constant_time_compare
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 
 class SecretGenerateView(APIView):
     """
-    This view generates a new secret and stores it in the database.
+    This view is responsible for generating a new secret.
+
+    Methods:
+        post: This method generates a new secret and saves it to the database.
+            It expects the following JSON fields:
+            - secret_text (str): The secret data to be stored.
+            - passphrase (str): The passphrase to encrypt the secret data.
     """
 
+    @swagger_auto_schema(
+        request_body=SecretSerializer,
+        responses={201: openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={'secret_key': openapi.Schema(type=openapi.TYPE_STRING)}
+        )}
+    )
     def post(self, request, format=None):
         """
-        Generates a new secret and stores it in the database.
+        This method generates a new secret and saves it to the database.
 
         Parameters:
-        request (HttpRequest): The incoming request.
-        format (str): The format of the request.
+            request (HttpRequest): The incoming request.
+            format (str): The format of the request.
 
         Returns:
-        Response: A response containing the secret key.
+            Response: A response with the secret key.
         """
         serializer = SecretSerializer(data=request.data)
         if serializer.is_valid():
@@ -33,34 +48,44 @@ class SecretGenerateView(APIView):
 
 class SecretRetrieveView(APIView):
     """
-    Retrieve a secret based on its key and a provided passphrase.
+    This view is responsible for retrieving a secret based on the secret key and a passphrase.
 
-    Parameters:
-    secret_key (str): The unique key of the secret to retrieve.
-    request (HttpRequest): The incoming request containing the passphrase.
-
-    Returns:
-    Response: A response containing the secret or an error.
+    Methods:
+        get: This method retrieves the secret based on the secret key and the passphrase.
     """
 
     def get(self, request, secret_key, format=None):
+        """
+        This method retrieves the secret based on the secret key and the passphrase.
+
+        Parameters:
+            request (HttpRequest): The incoming request.
+            secret_key (str): The secret key used to retrieve the secret.
+            format (str): The format of the request.
+
+        Returns:
+            Response: A response with the secret or an error message.
+        """
+        # Получение секрета по его ключу
         secret = get_object_or_404(Secret, secret_key=secret_key)
 
-        if secret.is_active:
-            secret.is_active = False
-            secret.save()
-        else:
-            return Response({"error": "This secret is not active"}, status=status.HTTP_200_OK)
+        # Проверка активности секрета
+        if not secret.is_active:
+            return Response({"error": "This secret is not active"}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = PassphraseSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Получение параметра passphrase из URL
+        passphrase = request.data.get('passphrase')
+        print(passphrase)
 
-        passphrase = serializer.validated_data.get('passphrase', None)
+        # Проверка наличия пароля
+        if not passphrase:
+            return Response({"error": "Passphrase is required"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Дешифровка секрета
         decrypted_secret, decrypted_passphrase = decrypt(secret.iv, secret.encrypted_secret,
                                                          secret.encrypted_passphrase)
 
+        # Проверка правильности пароля
         if constant_time_compare(passphrase, decrypted_passphrase):
             return Response({"secret": decrypted_secret}, status=status.HTTP_200_OK)
         else:
