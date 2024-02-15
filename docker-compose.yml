@@ -9,6 +9,7 @@ x-environment-defaults: &environment-defaults
   DB_PORT: 5432
   SECRET_KEY: "django-insecure-__uo0yu^z8s*snm2d-#!^+sivlqe9g@01$$3*_u!*xr&7%%nv+l"
   AES_KEY: "my_secret_key_16"
+  CHOSEN_ENV: "config.settings_prod"
 
 services:
   app:
