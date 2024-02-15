@@ -23,28 +23,37 @@ def generate_secret_key(secret: str, passphrase: str) -> str:
     return hashed_key
 
 
-def encrypt(secret: str, password: str) -> tuple:
-    """
-    This function takes in a secret string and a password as input, and returns a tuple of the initialization vector (IV), the encrypted secret, and the encrypted password.
+# def encrypt(secret: str, password: str) -> tuple:
+#     """
+#     This function takes in a secret string and a password as input, and returns a tuple of the initialization vector (IV), the encrypted secret, and the encrypted password.
+#
+#     Args:
+#         secret (str): The secret string to be encrypted.
+#         password (str): The password to be used for encryption.
+#
+#     Returns:
+#         tuple: A tuple containing the IV, the encrypted secret, and the encrypted password.
+#
+#     """
+#     cipher = AES.new(AES_KEY.encode('utf-8'), AES.MODE_CBC)
+#     iv = base64.b64encode(cipher.iv).decode('utf-8')
+#
+#     encrypted_secret = cipher.encrypt(pad(secret.encode('utf-8'), AES.block_size))
+#     encrypted_secret = base64.b64encode(encrypted_secret).decode('utf-8')
+#
+#     encrypted_password = cipher.encrypt(pad(password.encode('utf-8'), AES.block_size))
+#     encrypted_password = base64.b64encode(encrypted_password).decode('utf-8')
+#
+#     return iv, encrypted_secret, encrypted_password
 
-    Args:
-        secret (str): The secret string to be encrypted.
-        password (str): The password to be used for encryption.
-
-    Returns:
-        tuple: A tuple containing the IV, the encrypted secret, and the encrypted password.
-
-    """
+def encrypt(common_value: str) -> str:
     cipher = AES.new(AES_KEY.encode('utf-8'), AES.MODE_CBC)
     iv = base64.b64encode(cipher.iv).decode('utf-8')
 
-    encrypted_secret = cipher.encrypt(pad(secret.encode('utf-8'), AES.block_size))
-    encrypted_secret = base64.b64encode(encrypted_secret).decode('utf-8')
+    encrypted_value = cipher.encrypt(pad(common_value.encode('utf-8'), AES.block_size))
+    encrypted_value = base64.b64encode(encrypted_value).decode('utf-8')
 
-    encrypted_password = cipher.encrypt(pad(password.encode('utf-8'), AES.block_size))
-    encrypted_password = base64.b64encode(encrypted_password).decode('utf-8')
-
-    return iv, encrypted_secret, encrypted_password
+    return encrypted_value
 
 
 def decrypt(iv: str, encrypted_secret: str, encrypted_password: str) -> tuple:

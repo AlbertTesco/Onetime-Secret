@@ -1,6 +1,5 @@
 from django.db import models
 from django.utils import timezone
-
 from mysecrets.utils import generate_secret_key
 
 
